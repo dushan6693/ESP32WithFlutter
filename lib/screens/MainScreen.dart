@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -20,6 +21,12 @@ class _MainScreenState extends State<MainScreen> {
   List<BluetoothDevice> _devicesList = [];
   bool _searching = false;
   TextEditingController _typedText = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _isBluetoothEnabled();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,9 +124,9 @@ class _MainScreenState extends State<MainScreen> {
                         children: [
                           FilledButton(
                             onPressed: () {
-                              if (_connected) {
-                                _sendData(data: _typedText.text);
-                              }
+                              _connected
+                                  ? _sendData(data: _typedText.text)
+                                  : null;
                             },
                             child: Text("Send"),
                             style: ButtonStyle(
@@ -160,6 +167,23 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _isBluetoothEnabled() async {
+    super.initState();
+    bool? isAvailable = await _bluetooth.isAvailable;
+
+    if (isAvailable ?? false) {
+      // Check if Bluetooth is turned on
+      bool? isEnabled = await _bluetooth.isEnabled;
+
+      if (!isEnabled! ?? false) {
+        // Request to turn on Bluetooth
+        await _bluetooth.requestEnable();
+      }
+    } else {
+      print('Bluetooth is not available on this device.');
+    }
   }
 
   Future<void> _showDeviceListPopup() async {
@@ -249,6 +273,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void _sendData({required String data}) {
     if (_connection != null) {
+      data = "$data\n";
       _connection.output.add(Uint8List.fromList(data.codeUnits));
       _connection.output.allSent.then((_) {
         print("Data sent successfully");
