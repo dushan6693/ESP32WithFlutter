@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:myapp1/screens/MainScreen.dart';
 
 void main() {
-  runApp(const MyApp());git
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
