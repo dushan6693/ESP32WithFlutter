@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:syncfusion_flutter_charts/sparkcharts.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,6 +22,8 @@ class _MainScreenState extends State<MainScreen> {
   List<BluetoothDevice> _devicesList = [];
   bool _searching = false;
   TextEditingController _typedText = TextEditingController();
+
+  List<_Chart> data = [_Chart(1, 0)];
 
   @override
   void initState() {
@@ -152,10 +155,12 @@ class _MainScreenState extends State<MainScreen> {
                           height: MediaQuery.of(context).size.height * 0.4,
                           child: Container(
                             padding: EdgeInsets.only(top: 5.0, left: 5.0),
-                            child: Text(
-                              "$_dataReceived\n",
-                              textAlign: TextAlign.left,
-                              overflow: TextOverflow.ellipsis,
+                            child: SingleChildScrollView(
+                              child: Text(
+                                "$_dataReceived\n",
+                                textAlign: TextAlign.left,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ),
@@ -163,6 +168,28 @@ class _MainScreenState extends State<MainScreen> {
                     ],
                   ),
                 ),
+                Row(
+                  children: [
+                    SfCartesianChart(
+                        primaryXAxis: CategoryAxis(),
+                        // Chart title
+                        title: ChartTitle(text: 'Values chart'),
+                        // Enable legend
+                        legend: Legend(isVisible: true),
+                        // Enable tooltip
+                        tooltipBehavior: TooltipBehavior(enable: true),
+                        series: <CartesianSeries<_Chart, int>>[
+                          LineSeries<_Chart, int>(
+                              dataSource: data,
+                              xValueMapper: (_Chart d, _) => d.time,
+                              yValueMapper: (_Chart d, _) => d.range,
+                              name: 'Switch',
+                              // Enable data label
+                              dataLabelSettings: DataLabelSettings(isVisible: true))
+                        ]),
+
+                  ],
+                )
               ]),
         ),
       ),
@@ -241,6 +268,7 @@ class _MainScreenState extends State<MainScreen> {
           print("Received data: $receivedData");
           setState(() {
             _dataReceived = _dataReceived + receivedData;
+
           });
         },
         onDone: () {
@@ -280,4 +308,9 @@ class _MainScreenState extends State<MainScreen> {
       });
     }
   }
+}
+class _Chart {
+  _Chart(this.time, this.range);
+  final int time;
+  final int range;
 }
