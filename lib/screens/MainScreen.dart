@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:syncfusion_flutter_charts/sparkcharts.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -13,17 +11,17 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
+  final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
   late BluetoothConnection _connection;
   bool _connected = false;
   late BluetoothDevice _connectedDevice;
-  String _dataToSend = "";
-  String _dataReceived = "";
-  List<BluetoothDevice> _devicesList = [];
-  bool _searching = false;
-  TextEditingController _typedText = TextEditingController();
+  String _dataReceived = '{"nitro": "0","pos": "0","pota": "0", "ph": "0"}';
+  final TextEditingController _typedText = TextEditingController();
 
-  List<_Chart> data = [_Chart(1, 0)];
+  String _nitro = "0";
+  String _pos = "0";
+  String _pota = "0";
+  String _ph = "0";
 
   @override
   void initState() {
@@ -37,30 +35,30 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         backgroundColor: Colors.blue.shade400,
         foregroundColor: Colors.white,
-        title: Text("BT Serial"),
+        title: const Text("BT Serial"),
         elevation: 4.0,
         shadowColor: Colors.black,
       ),
       body: SingleChildScrollView(
         child: Container(
-          margin: EdgeInsets.only(bottom: 80.0),
+          margin: const EdgeInsets.only(bottom: 80.0),
           child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  margin: EdgeInsets.only(top: 10.0),
+                  margin: const EdgeInsets.only(top: 10.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         _connected ? 'Connected' : 'Disconnected',
-                        style: TextStyle(fontSize: 18),
+                        style: const TextStyle(fontSize: 18),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  margin: EdgeInsets.all(30.0),
+                  margin: const EdgeInsets.all(30.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -70,13 +68,13 @@ class _MainScreenState extends State<MainScreen> {
                             onPressed: _connected
                                 ? _disconnectFromDevice
                                 : _showDeviceListPopup,
-                            child: Text(
-                                _connected ? 'Disconnect' : 'Select Device'),
                             style: ButtonStyle(
                                 backgroundColor: MaterialStateProperty.all(
                                     Colors.blue.shade400),
                                 foregroundColor:
                                     MaterialStateProperty.all(Colors.white)),
+                            child: Text(
+                                _connected ? 'Disconnect' : 'Select Device'),
                           )
                         ],
                       ),
@@ -84,10 +82,10 @@ class _MainScreenState extends State<MainScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text("Device: " + _connectedDevice.name.toString()),
+                            Text("Device: ${_connectedDevice.name}"),
                             Text(
                               _connectedDevice.address.toString(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 12, color: Colors.black38),
                             )
                           ],
@@ -96,7 +94,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
                 Container(
-                  margin: EdgeInsets.all(30.0),
+                  margin: const EdgeInsets.all(30.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -106,7 +104,7 @@ class _MainScreenState extends State<MainScreen> {
                             width: MediaQuery.of(context).size.width * 0.6,
                             child: TextField(
                               controller: _typedText,
-                              decoration: new InputDecoration(
+                              decoration: InputDecoration(
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(30.0),
                                   borderSide: BorderSide(
@@ -131,12 +129,12 @@ class _MainScreenState extends State<MainScreen> {
                                   ? _sendData(data: _typedText.text)
                                   : null;
                             },
-                            child: Text("Send"),
                             style: ButtonStyle(
                                 backgroundColor: MaterialStateProperty.all(
                                     Colors.blue.shade400),
                                 foregroundColor:
                                     MaterialStateProperty.all(Colors.white)),
+                            child: const Text("Send"),
                           )
                         ],
                       )
@@ -144,52 +142,77 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
                 Container(
-                  margin: EdgeInsets.all(30.0),
+                  margin: const EdgeInsets.all(30.0),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Card(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0)),
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          height: MediaQuery.of(context).size.height * 0.4,
-                          child: Container(
-                            padding: EdgeInsets.only(top: 5.0, left: 5.0),
-                            child: SingleChildScrollView(
-                              child: Text(
-                                "$_dataReceived\n",
-                                textAlign: TextAlign.left,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                      Column(
+                        children: [
+                          FilledButton(
+                            onPressed: () {
+                              _connected ? _sendData(data: "5") : null;
+                            },
+                            style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all(
+                                    Colors.blue.shade400),
+                                foregroundColor:
+                                    MaterialStateProperty.all(Colors.white)),
+                            child: Text("Read Data"),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(right: 20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Nitrogen: ",
+                                  style: TextStyle(fontSize: 20.0),
+                                ),
+                                Text(
+                                  "Phosphorus: ",
+                                  style: TextStyle(fontSize: 20.0),
+                                ),
+                                Text(
+                                  "Potassium: ",
+                                  style: TextStyle(fontSize: 20.0),
+                                ),
+                                Text(
+                                  "PH: ",
+                                  style: TextStyle(fontSize: 20.0),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
+                          Column(
+                            children: [
+                              Text(
+                                nitro,
+                                style: const TextStyle(fontSize: 20.0),
+                              ),
+                              Text(
+                                pos,
+                                style: const TextStyle(fontSize: 20.0),
+                              ),
+                              Text(
+                                pota,
+                                style: const TextStyle(fontSize: 20.0),
+                              ),
+                              Text(
+                                ph,
+                                style: const TextStyle(fontSize: 20.0),
+                              )
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                Row(
-                  children: [
-                    SfCartesianChart(
-                        primaryXAxis: CategoryAxis(),
-                        // Chart title
-                        title: ChartTitle(text: 'Values chart'),
-                        // Enable legend
-                        legend: Legend(isVisible: true),
-                        // Enable tooltip
-                        tooltipBehavior: TooltipBehavior(enable: true),
-                        series: <CartesianSeries<_Chart, int>>[
-                          LineSeries<_Chart, int>(
-                              dataSource: data,
-                              xValueMapper: (_Chart d, _) => d.time,
-                              yValueMapper: (_Chart d, _) => d.range,
-                              name: 'Switch',
-                              // Enable data label
-                              dataLabelSettings: DataLabelSettings(isVisible: true))
-                        ]),
-
-                  ],
-                )
               ]),
         ),
       ),
@@ -266,9 +289,13 @@ class _MainScreenState extends State<MainScreen> {
         (Uint8List data) {
           String receivedData = utf8.decode(data);
           print("Received data: $receivedData");
-          setState(() {
-            _dataReceived = _dataReceived + receivedData;
 
+          setState(() {
+            _dataReceived = receivedData;
+            nitro = _getJson(receivedData, "nitro");
+            pos = _getJson(receivedData, "pos");
+            pota = _getJson(receivedData, "pota");
+            ph = _getJson(receivedData, "ph");
           });
         },
         onDone: () {
@@ -308,9 +335,40 @@ class _MainScreenState extends State<MainScreen> {
       });
     }
   }
-}
-class _Chart {
-  _Chart(this.time, this.range);
-  final int time;
-  final int range;
+
+  _getJson(String data, String name) {
+    try {
+      Map<String, dynamic> jsonData = jsonDecode(data);
+      String value = jsonData[name];
+      print(value);
+      return value;
+    } on FormatException catch (e) {
+      print("Invalid JSON string. $e");
+    }
+    return '-';
+  }
+
+  String get nitro => _nitro;
+
+  set nitro(String value) {
+    _nitro = value;
+  }
+
+  String get pos => _pos;
+
+  set pos(String value) {
+    _pos = value;
+  }
+
+  String get pota => _pota;
+
+  set pota(String value) {
+    _pota = value;
+  }
+
+  String get ph => _ph;
+
+  set ph(String value) {
+    _ph = value;
+  }
 }
